@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  syringe:
+    image: syringe
+    build: .
+    ports:
+    - 8000:8000
+    environment:
+      - GIN_MODE=debug # default (choices: debug, release)
+    #volumes: # mount the local syringe.yml into the container to override the default config added during build
+    #  - ./syringe.yml:/app/syringe.yml

@@ -1,0 +1,6 @@
+---
+TimeoutMillisecons: 5000
+ResolverIp: 127.0.0.1
+PinMinTtl: 10
+ServerListenPort: 8000
+DomainsFile: /etc/syringe/domains

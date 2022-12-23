@@ -1,0 +1,14 @@
+[Unit]
+Description=syringe dns-preheat daemon
+After=network.target
+Before=nss-lookup.target
+Wants=nss-lookup.target
+
+[Service]
+Type=simple
+Restart=always
+WatchdogSec=300
+ExecStart=/usr/local/bin/syringe -config /etc/syringe/%I.yml
+
+[Install]
+WantedBy=multi-user.target

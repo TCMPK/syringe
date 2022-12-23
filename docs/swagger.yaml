@@ -1,0 +1,131 @@
+basePath: /api/v1
+definitions:
+  main.DomainDefinition:
+    properties:
+      domain:
+        example: google.com
+        type: string
+      type:
+        example: A
+        type: string
+    type: object
+  main.DomainListDefinition:
+    properties:
+      domains:
+        items:
+          $ref: '#/definitions/main.DomainDefinition'
+        type: array
+    type: object
+  main.Response:
+    properties:
+      message:
+        example: success
+        type: string
+    type: object
+  main.ResponseWithDomains:
+    properties:
+      domains:
+        items:
+          $ref: '#/definitions/main.DomainDefinition'
+        type: array
+      message:
+        example: success
+        type: string
+    type: object
+  main.ResponseWithSize:
+    properties:
+      message:
+        example: success
+        type: string
+      size:
+        example: 1
+        type: integer
+    type: object
+host: localhost:8000
+info:
+  contact:
+    email: github@tcmpk.de
+    name: Peter Klein
+    url: https://blog.tcmpk.de
+  description: A lightweight api for the syringe daemon
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: https://github.com/TCMPK/syringe
+  title: Syringe Api Documentation
+  version: "1.0"
+paths:
+  /domains:
+    get:
+      description: Responds with the queue
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.ResponseWithDomains'
+      summary: Return a list of domains currently in the queue
+      tags:
+      - syringe
+    post:
+      description: Responds with the new queue size
+      parameters:
+      - description: domain list
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/main.DomainListDefinition'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.ResponseWithSize'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.Response'
+      summary: Load domains into the queue
+      tags:
+      - syringe
+  /domains/count:
+    get:
+      description: Responds with the queue size
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.ResponseWithSize'
+      summary: Return the number of domains in the queue
+      tags:
+      - syringe
+  /domains/random:
+    post:
+      description: Responds with the new queue size
+      parameters:
+      - description: int valid
+        example: 10
+        in: query
+        minimum: 1
+        name: count
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.ResponseWithSize'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.Response'
+      summary: Load random domains from the configured domains file
+      tags:
+      - syringe
+swagger: "2.0"

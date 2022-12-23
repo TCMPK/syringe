@@ -1,0 +1,110 @@
+name: Package
+
+on:
+  push:
+    tags:
+    - 'v*'
+    
+env:
+  NFPM_VERSION: 2.22.2
+  GO_VERSION: 1.19
+
+jobs:
+  build_linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup go and Build
+        uses: actions/setup-go@v3
+        with:
+          go-version:  ${{ env.GO_VERSION }}
+      - run: go build -o syringe_linux_amd64
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: syringe_linux_amd64
+          path: syringe_linux_amd64
+
+  package:
+    name: Package
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        nfpm_packager: [ "deb" ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup go and Build
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - run: go build -o syringe
+      - name: Install Dependencies
+        run: sudo apt install -y wget gettext-base
+      - name: Install nfpm
+        run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.22.2
+      - name: Package using nfpm
+        run: source .github/packaging/envvars.sh && envsubst < .github/packaging/nfpm.yml.tpl > nfpm.yml && nfpm package --config nfpm.yml --packager  ${{ matrix.nfpm_packager }} -t syringe_deb_amd64
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: syringe_${{ matrix.nfpm_packager }}_amd64
+          path: syringe_deb_amd64
+  release:
+    name: Release Artifacts
+    runs-on: ubuntu-latest
+    needs:
+    - build_linux
+    - package
+    steps:
+      - name: Set Versions
+        uses: actions/github-script@v6
+        id: set_version
+        with:
+          result-encoding: string
+          script: |
+            const tag = context.ref.substring(10)
+            const no_v = tag.replace('v', '')
+            return no_v
+      - name: Download Linux Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: syringe_linux_amd64
+      - name: Download Debian Atrifact
+        uses: actions/download-artifact@v3
+        with:
+          name: syringe_deb_amd64
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+      - name: List Directory Contenty
+        run: find /home/runner/work
+      - name: Upload Linux Asset
+        id: upload-linux-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: syringe_linux_amd64
+          asset_name: syringe_${{steps.set_version.outputs.result}}_linux_amd64
+          asset_content_type: application/zip
+      - name: Upload Debian Asset
+        id: upload-deb-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: syringe_deb_amd64
+          asset_name: syringe_${{steps.set_version.outputs.result}}_linux_amd64.deb
+          asset_content_type: application/zip
