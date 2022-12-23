@@ -34,7 +34,10 @@
 2. [Usage](#usage)
 3. [Building](#building)
 4. [Monitoring & Metrics](#monitoring)
-5. 
+5. [Screenshots](#screenshots)
+6. [Roadmap](#roadmap)
+7. [Contributing](#contributing)
+
 <!-- ABOUT THE PROJECT -->
 # <a name="about-the-project"></a> About The Project
 
@@ -177,7 +180,7 @@ Visualization is also provided as `Grafana` dashboard in the `grafana/dashboard.
 
 
 <!-- SCREENSHOTS -->
-# Screenshots
+# <a name="screenshots"></a> Screenshots
 
 Grafana Dashboard `grafana/dashboard.json`
 <img src=".github/assets/grafana_overview.png" />
@@ -188,14 +191,14 @@ Swagger Documentation `http://localhost:8000/docs/index.html`
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- ROADMAP -->
-# Roadmap
+# <a name="roadmap"></a> Roadmap
 
 See the [open issues](https://github.com/TCMPK/syringe/issues) for a full list of proposed features (and known issues).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- CONTRIBUTING -->
-# Contributing
+#<a name="contributing"></a> Contributing
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
