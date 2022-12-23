@@ -198,7 +198,7 @@ See the [open issues](https://github.com/TCMPK/syringe/issues) for a full list o
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- CONTRIBUTING -->
-#<a name="contributing"></a> Contributing
+# <a name="contributing"></a> Contributing
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
