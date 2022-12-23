@@ -2,13 +2,8 @@
 <a name="readme-top"></a>
 
 <!-- PROJECT SHIELDS -->
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
-[![Swagger][swagger-shield]][issues-url]
 [![Go Version][go-mod-shield]][issues-url]
-
 
 <!-- PROJECT LOGO -->
 <br />
@@ -176,6 +171,31 @@ Getting started is easy as there are many methods to start right away!
 * Open `http://localhost:8000/docs/index.html` which which should present you with the swagger-api documentation. Now you can get your hands on
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- MONITORING -->
+# Monitoring & Metrics
+
+Metrics are exposed as `Prometheus` metrics are available via `localhost:8000/metrics`.
+Visualization is also provided as `Grafana` dashboard in the `grafana/dashboard.json` folder.
+
+### Setup
+* Install Prometheus or use a `Docker` container
+* Install Grafana or use a `Docker` container
+* Setup a `Prometheus` scrape job and adjust `target` as for your deployment
+  ```yml
+  scrape_configs:
+    - job_name: 'syringe scrape'
+      scrape_interval: 5s
+      static_configs:
+        - targets: 
+          - 'localhost:8000'
+  ```
+* Add the `Prometheus` data source to `Grafana`
+* Import the `Grafana` dashboard from the `grafana/dashboard.json` file
+* Select the correct `Data Source` (uses default by default) in the `syringe` dashboard if multiple data sources are present
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 
 <!-- SCREENSHOTS -->
 # Screenshots
