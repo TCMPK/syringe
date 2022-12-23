@@ -29,35 +29,17 @@
 </div>
 
 <!-- TABLE OF CONTENTS -->
-<details>
-  <summary>Table of Contents</summary>
-  <ol>
-    <li>
-      <a href="#about-the-project">About The Project</a>
-      <ul>
-        <li><a href="#built-with">Built With</a></li>
-      </ul>
-    </li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
-      </ul>
-    </li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
-  </ol>
-</details>
-
-
+# Table of Contents
+1. [About The Project](#about-the-project)
+2. [Usage](#usage)
+3. [Building](#building)
+4. [Monitoring & Metrics](#monitoring)
+5. [Screenshots](#screenshots)
+6. [Roadmap](#roadmap)
+7. [Contributing](#contributing)
 
 <!-- ABOUT THE PROJECT -->
-# About The Project
+# <a name="about-the-project"></a> About The Project
 
 During my quest to improve customer satisfaction, I asked myself how I may reduce the impact on customers dns response times during frequent component replacements (the component is a dns-resolver in this case if you mind asking).
 
@@ -70,7 +52,7 @@ Side note: This is also a "java programmer"'s first take on a `go` application w
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- USAGE EXAMPLES -->
-# Usage
+# <a name="usage"></a> Usage
 
 > **_NOTE:_** 
 > Please download/build a specific release first
@@ -96,8 +78,8 @@ _For informations regarding the configuration file, please refer to the [Documen
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- GETTING STARTED -->
-# Building
+<!-- Building -->
+# <a name="building"> Building
 
 Getting started is easy as there are many methods to start right away!
 
@@ -173,7 +155,7 @@ Getting started is easy as there are many methods to start right away!
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- MONITORING -->
-# Monitoring & Metrics
+# <a name="monitoring"> Monitoring & Metrics
 
 Metrics are exposed as `Prometheus` metrics are available via `localhost:8000/metrics`.
 Visualization is also provided as `Grafana` dashboard in the `grafana/dashboard.json` folder.
@@ -198,7 +180,7 @@ Visualization is also provided as `Grafana` dashboard in the `grafana/dashboard.
 
 
 <!-- SCREENSHOTS -->
-# Screenshots
+# <a name="screenshots"></a> Screenshots
 
 Grafana Dashboard `grafana/dashboard.json`
 <img src=".github/assets/grafana_overview.png" />
@@ -209,14 +191,14 @@ Swagger Documentation `http://localhost:8000/docs/index.html`
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- ROADMAP -->
-# Roadmap
+# <a name="roadmap"></a> Roadmap
 
 See the [open issues](https://github.com/TCMPK/syringe/issues) for a full list of proposed features (and known issues).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- CONTRIBUTING -->
-# Contributing
+# <a name="contributing"></a> Contributing
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
