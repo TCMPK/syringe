@@ -4,6 +4,7 @@ on:
   push:
     tags:
     - 'v*'
+  workflow_dispatch:
     
 env:
   NFPM_VERSION: 2.22.2
