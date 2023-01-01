@@ -4,6 +4,7 @@ on:
   push:
     tags:
     - 'v*'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -36,3 +37,10 @@ jobs:
         tags: |
           ${{secrets.DOCKERHUB_USERNAME}}/syringe:latest
           ${{secrets.DOCKERHUB_USERNAME}}/syringe:${{steps.set_version.outputs.result}}
+    - name: Sync README.md to DockerHub
+      uses: ms-jpq/sync-dockerhub-readme@v1
+      with:
+        username: ${{secrets.DOCKERHUB_USERNAME}}
+        password:  ${{secrets.DOCKERHUB_TOKEN}}
+        repository: tcmpk/syringe
+        readme: "./README.md"
