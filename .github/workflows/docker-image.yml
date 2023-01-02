@@ -6,6 +6,10 @@ on:
     - 'v*'
   workflow_dispatch:
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -14,11 +18,12 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
 
-    - name: Login to Docker Hub
-      uses: docker/login-action@v1
-      with:
-        username: ${{secrets.DOCKERHUB_USERNAME}}
-        password: ${{secrets.DOCKERHUB_TOKEN}}
+    - name: Log in to the Container registry
+        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Set Versions
       uses: actions/github-script@v6
@@ -30,17 +35,16 @@ jobs:
           const no_v = tag.replace('v', '')
           return no_v
 
-    - name: Build and Push
-      uses: docker/build-push-action@v2
+    - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
       with:
+        context: .
         push: true
-        tags: |
-          ${{secrets.DOCKERHUB_USERNAME}}/syringe:latest
-          ${{secrets.DOCKERHUB_USERNAME}}/syringe:${{steps.set_version.outputs.result}}
-    - name: Sync README.md to DockerHub
-      uses: ms-jpq/sync-dockerhub-readme@v1
-      with:
-        username: ${{secrets.DOCKERHUB_USERNAME}}
-        password:  ${{secrets.DOCKERHUB_TOKEN}}
-        repository: tcmpk/syringe
-        readme: "./README.md"
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
