@@ -14,11 +14,12 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
 
-    - name: Login to Docker Hub
-      uses: docker/login-action@v1
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v2
       with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Set Versions
       uses: actions/github-script@v6
@@ -30,17 +31,8 @@ jobs:
           const no_v = tag.replace('v', '')
           return no_v
 
-    - name: Build and Push
-      uses: docker/build-push-action@v2
+    - name: Build and push
+      uses: docker/build-push-action@v3
       with:
         push: true
-        tags: |
-          ${{ secrets.DOCKERHUB_USERNAME }}/syringe:latest
-          ${{ secrets.DOCKERHUB_USERNAME }}/syringe:${{steps.set_version.outputs.result}}
-    - name: Sync README.md to DockerHub
-      uses: ms-jpq/sync-dockerhub-readme@v1
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password:  ${{ secrets.DOCKERHUB_TOKEN }}
-        repository: tcmpk/syringe
-        readme: "./README.md"
+        tags: TCMPK/syringe:latest,TCMPK/syringe:${{ steps.set_version.outputs.result }}
