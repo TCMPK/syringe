@@ -35,4 +35,4 @@ jobs:
       uses: docker/build-push-action@v3
       with:
         push: true
-        tags: TCMPK/syringe:latest,TCMPK/syringe:${{ steps.set_version.outputs.result }}
+        tags: tcmpk/syringe:latest,tcmpk/syringe:${{ steps.set_version.outputs.result }}
