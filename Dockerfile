@@ -1,15 +1,16 @@
 # syntax=docker/dockerfile:1
 
-FROM golang:1.19-alpine as build
+FROM golang:alpine as build
 WORKDIR /app
 COPY . .
 RUN go mod download
 RUN go build -o /syringe
+RUN mkdir /etc/syringe && touch /etc/syringe/domains
 
-FROM golang:1.19-alpine
-ENV GIN_MODE release
+FROM scratch
 WORKDIR /app
 COPY --from=build /syringe /syringe
+COPY --from=build /etc/syringe /etc/syringe
 COPY syringe.yml syringe.yml
 COPY docs docs
 EXPOSE 8000/tcp
