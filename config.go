@@ -95,9 +95,7 @@ func ParseFlags(rc *ResolverConfiguration) error {
 	if err != nil {
 		return err
 	}
-	viper.Unmarshal(rc)
-
-	return nil
+	return viper.Unmarshal(rc)
 }
 
 type ResolverConfiguration struct {
