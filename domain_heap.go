@@ -122,11 +122,11 @@ func (dh *DomainHeap) watchHeapOps() {
 			select {
 			case popMsg := <-heapPopChan:
 				d := dh.PopDomain()
-				log.Debug("heap pop ", d.ToString())
+				log.Trace("heap pop ", d.ToString())
 				popMsg.result <- d
 			case pushMsg := <-heapPushChan:
 				d := &(pushMsg.x)
-				log.Debug("heap push ", d.ToString())
+				log.Trace("heap push ", d.ToString())
 				dh.PushDomain(d)
 				queueCandidateTimes.Observe(float64(d.SecondsUntilDue()))
 			}

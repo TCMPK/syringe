@@ -1,14 +1,17 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"reflect"
 	"strings"
 
+	"flag"
+
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
 )
 
@@ -65,41 +68,53 @@ func ValidateConfigPath(path string) error {
 
 // ParseFlags will create and parse the CLI flags
 // and return the path to be used elsewhere
-func ParseFlags() (string, error) {
-	// String that contains the configured configuration path
-	var configPath string
+func ParseFlags(rc *ResolverConfiguration) error {
+	viper.SetConfigName("syringe")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath(".")
+	viper.AutomaticEnv()
+	flag.UintVar(&rc.TimeoutMillisecons, "TimeoutMillisecons", 5000, "The timeout in milliseconds after which the request should be considered as missing")
+	flag.UintVar(&rc.RetryTimes, "RetryTimes", 0, "Amount of retried after a failed request")
+	flag.StringVar(&rc.ResolverIp, "ResolverIp", "127.0.0.1", "The resolver to which requests should be sent")
+	flag.UintVar(&rc.PinMinTtl, "PinMinTtl", 5, "If the returned ttl is greater than this value, use this ttl instead of the returned value")
+	flag.UintVar(&rc.StaticDelaySeconds, "StaticDelaySeconds", 600, "Dont send requests for the configured amount of seconds if the request returns a permanent error")
+	flag.UintVar(&rc.FlexibleDelayMinTtlSeconds, "FlexibleDelayMinTtlSeconds", 120, "If a flexible ttl is requested, return a value >= this value")
+	flag.UintVar(&rc.FlexibleDelayMaxTtlSeconds, "FlexibleDelayMaxTtlSeconds", 300, "If a flexible ttl is requested, return a value <= this value")
+	flag.Uint64Var(&rc.SleepLowTresholdMilliseconds, "SleepLowTresholdMilliseconds", 500, "If there is a bigger gap (>= value) between now and the next due request, sleep for value ms")
+	flag.Uint64Var(&rc.SleepLowTresholdCheckIntervalMilliseconds, "SleepLowTresholdCheckIntervalMilliseconds", 50, "If in next due time is < SleepLowTresholdMilliseconds, poll the queue every value ms")
+	flag.UintVar(&rc.ServerListenPort, "ServerListenPort", 9000, "Port on which the webserver should listen")
+	flag.StringVar(&rc.DomainsFile, "DomainsFile", "domains.txt", "A file which contains the list of domains to preheat. Entries must be separated by newline '\\n'. Syntax 'domain rrtype' (e.g. 'github.com A')")
+	flag.BoolVar(&rc.LoadDomainsFileOnStart, "LoadDomainsFileOnStart", true, "Load the domains file on start")
+	flag.UintVar(&rc.LoadDomainsFileInitialQueryLimit, "LoadDomainsFileInitialQueryLimit", 500, "Limit to value requests per second when reading from DomainsFile")
+	flag.UintVar(&rc.LogLevel, "LogLevel", 3, "LogLevel (1-8) to use. 1=Panic,8=Trace - see https://github.com/sirupsen/logrus")
 
-	// Set up a CLI flag called "-config" to allow users
-	// to supply the configuration file
-	flag.StringVar(&configPath, "config", "./syringe.yml", "path to config file")
-
-	// Actually parse the flags
-	flag.Parse()
-
-	// Validate the path first
-	if err := ValidateConfigPath(configPath); err != nil {
-		return "", err
+	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+	pflag.Parse()
+	viper.BindPFlags(pflag.CommandLine)
+	err := viper.ReadInConfig()
+	if err != nil {
+		return err
 	}
+	viper.Unmarshal(rc)
 
-	// Return the configuration path
-	return configPath, nil
+	return nil
 }
 
 type ResolverConfiguration struct {
-	TimeoutMillisecons                        uint32 `yaml:"TimeoutMillisecons" default:"5000"`
-	RetryTimes                                uint32 `yaml:"RetryTimes" default:"0"`
-	ResolverIp                                string `yaml:"ResolverIp" default:"127.0.0.1"`
-	PinMinTtl                                 uint32 `yaml:"PinMinTtl" default:"10"`
-	StaticDelaySeconds                        uint32 `yaml:"StaticDelaySeconds" default:"600"`
-	FlexibleDelayMinTtlSeconds                uint32 `yaml:"FlexibleDelayMinTtlSeconds" default:"120"`
-	FlexibleDelayMaxTtlSeconds                uint32 `yaml:"FlexibleDelayMaxTtlSeconds" default:"300"`
-	SleepLowTresholdMilliseconds              int64  `yaml:"SleepLowTresholdMilliseconds" default:"500"`
-	SleepLowTresholdCheckIntervalMilliseconds int64  `yaml:"SleepLowTresholdCheckIntervalMilliseconds" default:"50"`
-	ServerListenPort                          int    `yaml:"ServerListenPort" default:"8000"`
-	DomainsFile                               string `yaml:"DomainsFile" default:""`
-	LoadDomainsFileOnStart                    bool   `yaml:"LoadDomainsFileOnStart" default:"false"`
-	LoadDomainsFileInitialQueryLimit          uint32 `yaml:"LoadDomainsFileInitialQueryLimit" default:"100"`
-	LogLevel                                  uint32 `yaml:"LogLevel" default:"3"`
+	TimeoutMillisecons                        uint   `yaml:"TimeoutMillisecons"`
+	RetryTimes                                uint   `yaml:"RetryTimes"`
+	ResolverIp                                string `yaml:"ResolverIp"`
+	PinMinTtl                                 uint   `yaml:"PinMinTtl"`
+	StaticDelaySeconds                        uint   `yaml:"StaticDelaySeconds"`
+	FlexibleDelayMinTtlSeconds                uint   `yaml:"FlexibleDelayMinTtlSeconds"`
+	FlexibleDelayMaxTtlSeconds                uint   `yaml:"FlexibleDelayMaxTtlSeconds"`
+	SleepLowTresholdMilliseconds              uint64 `yaml:"SleepLowTresholdMilliseconds"`
+	SleepLowTresholdCheckIntervalMilliseconds uint64 `yaml:"SleepLowTresholdCheckIntervalMilliseconds"`
+	ServerListenPort                          uint   `yaml:"ServerListenPort"`
+	DomainsFile                               string `yaml:"DomainsFile"`
+	LoadDomainsFileOnStart                    bool   `yaml:"LoadDomainsFileOnStart"`
+	LoadDomainsFileInitialQueryLimit          uint   `yaml:"LoadDomainsFileInitialQueryLimit"`
+	LogLevel                                  uint   `yaml:"LogLevel"`
 }
 
 func StructToKeyValuePairs(config *ResolverConfiguration) map[string]interface{} {

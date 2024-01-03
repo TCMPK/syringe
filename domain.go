@@ -25,7 +25,7 @@ func (domain Domain) Validate() bool {
 
 }
 
-func (domain Domain) Query(strategyContainer *ResolverStrategies, config *ResolverConfiguration, c chan<- uint32) {
+func (domain Domain) Query(strategyContainer *ResolverStrategies, config *ResolverConfiguration, c chan<- uint) {
 	for i := 0; i < len(strategyContainer.ResolveFunctions); i++ {
 		strategy := strategyContainer.ResolveFunctions[i]
 		ttl, err := strategy(config, &domain)
@@ -36,10 +36,10 @@ func (domain Domain) Query(strategyContainer *ResolverStrategies, config *Resolv
 		c <- ttl
 		return
 	}
-	c <- uint32(config.StaticDelaySeconds)
+	c <- uint(config.StaticDelaySeconds)
 }
 
-func (domain *Domain) RefreshInSeconds(seconds uint32) {
+func (domain *Domain) RefreshInSeconds(seconds uint) {
 	domain.Refresh_at = time.Now().UnixMilli() + int64(seconds*1000)
 }
 

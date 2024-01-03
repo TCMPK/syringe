@@ -71,7 +71,7 @@ func HandleLoadRandomDomains(c *gin.Context, dh *DomainHeap) {
 			bulk_slot_size = 1
 		}
 		for i := 0; i < count; i++ {
-			dh.AppendRandom(uint32(i % bulk_slot_size))
+			dh.AppendRandom(uint(i % bulk_slot_size))
 		}
 		c.JSON(http.StatusOK, gin.H{
 			"message": "success",

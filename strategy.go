@@ -25,31 +25,31 @@ func init() {
 }
 
 type ResolverStrategies struct {
-	ResolveFunctions []func(config *ResolverConfiguration, domain *Domain) (uint32, error)
+	ResolveFunctions []func(config *ResolverConfiguration, domain *Domain) (uint, error)
 }
 
-func TryQueryRegularDomain(config *ResolverConfiguration, domain *Domain) (uint32, error) {
+func TryQueryRegularDomain(config *ResolverConfiguration, domain *Domain) (uint, error) {
 	resolver := dnsresolver.NewResolver(config.ResolverIp)
 	resolver.Targets(domain.Record_name).Types(dnsresolver.QueryType(domain.RecordType()))
 	// Lookup
 	res := resolver.Lookup()
 	for target := range res.ResMap {
 		for _, r := range res.ResMap[target] {
-			ttl_resolved := uint32(r.Ttl.Seconds())
+			ttl_resolved := uint(r.Ttl.Seconds())
 			pc, _, _, _ := runtime.Caller(0)
 			f := runtime.FuncForPC(pc)
 			domainsResolvedByStrategy.With(prometheus.Labels{"strategy": f.Name()}).Inc()
 			if ttl_resolved < config.PinMinTtl {
 				return config.PinMinTtl, nil
 			} else {
-				return uint32(r.Ttl.Seconds()), nil
+				return uint(r.Ttl.Seconds()), nil
 			}
 		}
 	}
 	return 0, errors.New("received no rr for regular lookup")
 }
 
-func TryQuerySOADomain(config *ResolverConfiguration, domain *Domain) (uint32, error) {
+func TryQuerySOADomain(config *ResolverConfiguration, domain *Domain) (uint, error) {
 	resolver := dnsresolver.NewResolver(config.ResolverIp)
 	resolver.Targets(domain.Record_name).Types(dnsresolver.QueryType(domain.RecordType()))
 
@@ -62,30 +62,30 @@ func TryQuerySOADomain(config *ResolverConfiguration, domain *Domain) (uint32, e
 	res := resolver.Lookup()
 	for target := range res.ResMap {
 		for _, r := range res.ResMap[target] {
-			ttl_resolved := uint32(r.Ttl.Seconds())
+			ttl_resolved := uint(r.Ttl.Seconds())
 			pc, _, _, _ := runtime.Caller(0)
 			f := runtime.FuncForPC(pc)
 			domainsResolvedByStrategy.With(prometheus.Labels{"strategy": f.Name()}).Inc()
 			if ttl_resolved < config.PinMinTtl {
 				return config.PinMinTtl, nil
 			} else {
-				return uint32(r.Ttl.Seconds()), nil
+				return uint(r.Ttl.Seconds()), nil
 			}
 		}
 	}
 	return 0, errors.New("received no rr for soa lookup")
 }
 
-func TryQueryFlexibleDelayDomain(config *ResolverConfiguration, domain *Domain) (uint32, error) {
+func TryQueryFlexibleDelayDomain(config *ResolverConfiguration, domain *Domain) (uint, error) {
 	pc, _, _, _ := runtime.Caller(0)
 	f := runtime.FuncForPC(pc)
 	domainsResolvedByStrategy.With(prometheus.Labels{"strategy": f.Name()}).Inc()
-	return uint32(rand.Intn(int(config.FlexibleDelayMaxTtlSeconds-config.FlexibleDelayMinTtlSeconds)) + int(config.FlexibleDelayMinTtlSeconds)), nil
+	return uint(rand.Intn(int(config.FlexibleDelayMaxTtlSeconds-config.FlexibleDelayMinTtlSeconds)) + int(config.FlexibleDelayMinTtlSeconds)), nil
 }
 
-func TryQueryStaticDelayDomain(config *ResolverConfiguration, domain *Domain) (uint32, error) {
+func TryQueryStaticDelayDomain(config *ResolverConfiguration, domain *Domain) (uint, error) {
 	pc, _, _, _ := runtime.Caller(0)
 	f := runtime.FuncForPC(pc)
 	domainsResolvedByStrategy.With(prometheus.Labels{"strategy": f.Name()}).Inc()
-	return uint32(config.StaticDelaySeconds), nil
+	return uint(config.StaticDelaySeconds), nil
 }

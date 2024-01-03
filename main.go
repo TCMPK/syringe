@@ -3,9 +3,9 @@ package main
 import (
 	"bufio"
 	"container/heap"
-	"fmt"
 	"math/rand"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -49,20 +49,17 @@ var (
 	domainList  []string
 )
 
-var resolverConfiguration *ResolverConfiguration
+var resolverConfiguration *ResolverConfiguration = &ResolverConfiguration{}
 var ginInstance *gin.Engine
 var dh *DomainHeap
 var resolverStrategies *ResolverStrategies
 
 func init() {
 	// Initialize configuration
-	path, err := ParseFlags()
+	err := ParseFlags(resolverConfiguration)
 	if err != nil {
 		log.Fatal(err)
 	}
-	resolverConfiguration = NewConfig(path)
-	SetStructMemberFromEnvVariables(resolverConfiguration)
-	fmt.Println(resolverConfiguration)
 
 	// Log as JSON instead of the default ASCII formatter.
 	//log.SetFormatter(&log.JSONFormatter{})
@@ -79,9 +76,14 @@ func init() {
 	prometheus.Register(queryResponseTtl)
 	prometheus.Register(queueSize)
 
-	// Initialize variables
+	// Initialize router/variables
+	if resolverConfiguration.LogLevel >= uint(log.DebugLevel) {
+		log.Debug("Setting gin mode to DebugMode because LogLevel is set to ", resolverConfiguration.LogLevel, ". Using LogLevel<", uint(log.DebugLevel), " will set the mode to release")
+		gin.SetMode(gin.DebugMode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
 	ginInstance = SetupRouter()
-	//gin.SetMode(gin.ReleaseMode)
 	dh = &DomainHeap{}
 	heap.Init(dh)
 	// Start the queue serializer (will schedule heap access)
@@ -89,7 +91,7 @@ func init() {
 
 	// Initialize strategies
 	resolverStrategies = &ResolverStrategies{
-		ResolveFunctions: []func(config *ResolverConfiguration, domain *Domain) (uint32, error){
+		ResolveFunctions: []func(config *ResolverConfiguration, domain *Domain) (uint, error){
 			TryQueryRegularDomain,
 			TryQuerySOADomain,
 			TryQueryFlexibleDelayDomain},
@@ -112,16 +114,22 @@ func init() {
 // @BasePath  /api/v1
 func main() {
 	// Register api endpoints
-	//ginInstance.StaticFS("/swagger-ui", gin.Dir("swagger-ui/dist", false))
-	//ginInstance.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	ginInstance.GET("/docs/*any", DocOverrideHandler)
-	//RegisterApiV1Endpoints(ginInstance, dh)
 	ginInstance.StaticFile("/swagger-static/doc.json", "docs/swagger.json")
 	ginInstance.GET("/metrics", gin.WrapH(promhttp.Handler()))
 	// Run the webserver
 	go func() {
-		ginInstance.Run(":" + strconv.Itoa(resolverConfiguration.ServerListenPort))
+		ginInstance.Run(":" + strconv.FormatUint(uint64(resolverConfiguration.ServerListenPort), 10))
 	}()
+
+	if resolverConfiguration.LoadDomainsFileOnStart {
+		log.Debug("Loading domains from ", resolverConfiguration.DomainsFile)
+		rowsRead, err := dh.LoadDomainsFile()
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Info("Read ", rowsRead, " rows from DomainsFile ", resolverConfiguration.DomainsFile)
+	}
 
 	// Main loop
 	for {
@@ -143,7 +151,7 @@ func main() {
 			time.Sleep(time.Duration(sleep_time) * time.Millisecond)
 		}
 
-		ch := make(chan uint32, 1)
+		ch := make(chan uint, 1)
 		go func() {
 			start := time.Now()
 			go cur.Query(resolverStrategies, resolverConfiguration, ch)
@@ -157,44 +165,47 @@ func main() {
 	}
 }
 
-func ReadDomainsFile(f string) {
-	if len(domainList) == 0 {
-		if len(resolverConfiguration.DomainsFile) == 0 {
-			return
-		}
-		readFile, err := os.Open(resolverConfiguration.DomainsFile)
-		if err != nil {
-			log.Error(err)
-		}
-		fileScanner := bufio.NewScanner(readFile)
+func ReadDomainsFile(f string) ([]string, error) {
+	var domainsRead = []string{}
+	readFile, err := os.Open(resolverConfiguration.DomainsFile)
+	if err != nil {
+		return domainsRead, err
+	}
+	fileScanner := bufio.NewScanner(readFile)
 
-		fileScanner.Split(bufio.ScanLines)
-		i := -1
-		for fileScanner.Scan() {
+	fileScanner.Split(bufio.ScanLines)
+	i := 0
+	for fileScanner.Scan() {
+		i++
+		line_split := strings.Split(fileScanner.Text(), " ")
+		if len(line_split) != 2 {
+			log.Error("Malformed line ", i, " in file ", resolverConfiguration.DomainsFile, " syntax='<domain> <rr type>' each per line - example: 'google.de A'")
+			continue
+		}
+		domainsRead = append(domainsRead, fileScanner.Text())
+	}
+
+	readFile.Close()
+	return domainsRead, nil
+}
+
+func (dh *DomainHeap) LoadDomainsFile() (uint, error) {
+	var i uint = 0
+	domainsRead, err := ReadDomainsFile(resolverConfiguration.DomainsFile)
+	if err != nil {
+		return i, err
+	}
+
+	for _, d := range domainsRead {
+		if !slices.Contains(domainList, d) {
 			i++
-			line_split := strings.Split(fileScanner.Text(), " ")
-			if len(line_split) != 2 {
-				log.Error("Malformed line ", i, " in file ", resolverConfiguration.DomainsFile, " syntax='<domain> <rr type>' each per line - example: 'google.de A'")
-				continue
-			}
-			domainList = append(domainList, fileScanner.Text())
+			dh.AddDomain(DomainListEntryToDomain(d))
 		}
-
-		readFile.Close()
 	}
+	return i, nil
 }
 
-func (dh *DomainHeap) LoadDomainsFile() {
-	ReadDomainsFile(resolverConfiguration.DomainsFile)
-	if len(domainList) == 0 {
-		return
-	}
-	for _, d := range domainList {
-		dh.AddDomain(DomainListEntryToDomain(d))
-	}
-}
-
-func (dh *DomainHeap) AppendRandom(delay_seconds uint32) {
+func (dh *DomainHeap) AppendRandom(delay_seconds uint) {
 	ReadDomainsFile(resolverConfiguration.DomainsFile)
 	if len(domainList) == 0 {
 		return
@@ -221,7 +232,7 @@ func LoadDomainsBulkWithApproxRateLimit(qps int, d []Domain) {
 		bulk_slot_size = 1
 	}
 	for i := 0; i < dSize; i++ {
-		d[i].RefreshInSeconds(uint32(i % dSize))
+		d[i].RefreshInSeconds(uint(i % dSize))
 		dh.AddDomain(d[i])
 	}
 }
