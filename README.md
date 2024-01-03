@@ -17,7 +17,7 @@
   <p align="center">
     The missing dns-preheating daemon!
     <br />
-    <a href="https://github.com/TCMPK/syringe"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/TCMPK/syringe/wiki/Configuration-Parameters"><strong>Explore the docs »</strong></a>
     <br />
     <br />
     <a href="https://github.com/TCMPK/syringe/tree/main/.github/assets">Screenshots</a>
